@@ -77,7 +77,6 @@ void initTGEngine(Window* window, void(*draw)(IndexBuffer*, VertexBuffer*), void
 	updateDescriptorSet(&camera_uniform.descriptor, sizeof(glm::mat4));
 
 	multiplier = (window->width / (float)window->height);
-	multiplierx = (window_list[0]->height / (float)window_list[0]->width);
 	fillUniformBuffer(&ui_camera_uniform, &glm::ortho(-multiplier, multiplier, -1.0f, 1.0f), sizeof(glm::mat4));
 	updateDescriptorSet(&ui_camera_uniform.descriptor, sizeof(glm::mat4));
 
@@ -90,23 +89,31 @@ void initTGEngine(Window* window, void(*draw)(IndexBuffer*, VertexBuffer*), void
 
 	createCommandBuffer();
 
+	addTextures();
+
+	index_buffer.index_count = 0;
+	main_buffer.count_of_points = 0;
 	main_buffer.start();
 	index_buffer.start();
+
 	for (Actor act : actors) {
 		act.mesh->consume(&main_buffer, &index_buffer);
 	}
 	draw(&index_buffer, &main_buffer);
+
 	index_offset = index_buffer.index_count;
 	vertex_offset = main_buffer.count_of_points;
 	tg_ui::ui_scene_entity.draw(&index_buffer, &main_buffer);
+
 	main_buffer.end();
 	index_buffer.end();
+
 	fillCommandBuffer(&index_buffer, &main_buffer);
 
-	singleTimeCommand();
+	startupCommands();
 	createSemaphores();
 
-	addTextures();
+	clock_t last_time = clock();
 
 	while (true) {
 		window->pollevents();
@@ -117,6 +124,44 @@ void initTGEngine(Window* window, void(*draw)(IndexBuffer*, VertexBuffer*), void
 			continue;
 		}
 		startdraw(&index_buffer, &main_buffer);
+
+		clock_t current_time = clock();
+		clock_t delta = current_time - last_time;
+
+		if (delta >= (CLOCKS_PER_SEC / 60)) {
+			last_time = current_time;
+
+			main_buffer.count_of_points = vertex_offset;
+			index_buffer.index_count = index_offset;
+			tg_ui::ui_scene_entity.update(tg_io::pos.x, tg_io::pos.y);
+			main_buffer.start();
+			index_buffer.start();
+			tg_ui::ui_scene_entity.draw(&index_buffer, &main_buffer);
+			main_buffer.end();
+			index_buffer.end();
+
+			startSingleTimeCommand();
+			vlib_buffer_copy.srcOffset = vlib_buffer_copy.dstOffset = vertex_offset * VERTEX_SIZE;
+			vlib_buffer_copy.size = (main_buffer.count_of_points - vertex_offset) * VERTEX_SIZE;
+			vkCmdCopyBuffer(
+				SINGELTIME_COMMAND_BUFFER,
+				main_buffer.stag_buf.staging_buffer,
+				main_buffer.vertex_buffer,
+				1,
+				&vlib_buffer_copy
+			);
+			vlib_buffer_copy.srcOffset = vlib_buffer_copy.dstOffset = 0;
+			vlib_buffer_copy.size = (index_buffer.index_count - index_offset) * sizeof(uint32_t);
+			vkCmdCopyBuffer(
+				SINGELTIME_COMMAND_BUFFER,
+				index_buffer.stag_buf.staging_buffer,
+				index_buffer.index_buffer,
+				1,
+				&vlib_buffer_copy
+			);
+			endSingleTimeCommand();
+		}
+
 		submit(&index_buffer, &main_buffer);
 		present(&index_buffer, &main_buffer);
 	}
@@ -124,13 +169,13 @@ void initTGEngine(Window* window, void(*draw)(IndexBuffer*, VertexBuffer*), void
 	destroyAllTextures();
 	destroySemaphores();
 	destroyCommandBuffer();
-	destroyDescriptors();
 	destroyMemory();
 	destroyIndexBuffer(&index_buffer);
 	destroyVertexBuffer(&main_buffer);
 	destroyStagingBuffer();
 	destroyFrameBuffer();
 	destroySwapchain();
+	destroyDescriptors();
 	destroyPipeline();
 	destroyShaders();
 	destroyRenderPass();

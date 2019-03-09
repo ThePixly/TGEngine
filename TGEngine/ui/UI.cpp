@@ -2,7 +2,7 @@
 
 namespace tg_ui {
 
-	UIEntity ui_scene_entity = UIEntity({}, {});
+	UIEntity ui_scene_entity = UIEntity({0, 0}, {});
 
 	UIEntity::UIEntity(glm::vec2 position, glm::vec2 extent)
 	{
@@ -38,12 +38,12 @@ namespace tg_ui {
 	{
 		for each (UIComponent* comp in this->components)
 		{
-			ASSERT_NONE_NULL_DB(comp, "UIComponent null", TG_ERR_UI_COMPONENT_NULL)
+			ASSERT_NONE_NULL_DB(comp, "UIComponent null", TG_ERR_DB_NULLPTR)
 				comp->draw(index, vertex);
 		}
 		for each (UIEntity* entity in this->children)
 		{
-			ASSERT_NONE_NULL_DB(entity, "UIEntity null", TG_ERR_UI_ENTITY_NULL)
+			ASSERT_NONE_NULL_DB(entity, "UIEntity null", TG_ERR_DB_NULLPTR)
 				entity->draw(index, vertex);
 		}
 	}
@@ -52,12 +52,12 @@ namespace tg_ui {
 	{
 		for each (UIComponent* comp in this->components)
 		{
-			ASSERT_NONE_NULL_DB(comp, "UIComponent null", TG_ERR_UI_COMPONENT_NULL)
+			ASSERT_NONE_NULL_DB(comp, "UIComponent null", TG_ERR_DB_NULLPTR)
 				comp->update(mouse_x, mouse_y);
 		}
 		for each (UIEntity* entity in this->children)
 		{
-			ASSERT_NONE_NULL_DB(entity, "UIEntity null", TG_ERR_UI_ENTITY_NULL)
+			ASSERT_NONE_NULL_DB(entity, "UIEntity null", TG_ERR_DB_NULLPTR)
 				entity->update(mouse_x, mouse_y);
 		}
 	}
@@ -76,6 +76,11 @@ namespace tg_ui {
 	{
 		if (this->parent == nullptr) return this->local_position;
 		return this->parent->getPosition() + this->local_position;
+	}
+
+	glm::vec2 UIEntity::getRenderPosition()
+	{
+		return (this->getPosition() * glm::vec2(2 * multiplier, 2)) - glm::vec2(multiplier, 1);
 	}
 
 	void UIComponent::draw(IndexBuffer * index, VertexBuffer * vertex)

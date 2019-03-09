@@ -6,6 +6,7 @@ import urllib.request
 import sys
 import subprocess
 import struct
+import shutil
 
 
 def clear(): os.system("cls")
@@ -131,6 +132,21 @@ def find(path):
                 loc += len(fl.readline())
 
 
+def callback(cob, size, total):
+    print(str(round(((cob * size) / total) * 100, 1)) + "%", end="\r")
+
+
+def getstb():
+    if os.path.exists("stb") and len(os.listdir("stb")) > 0:
+        print("Updating stb")
+        p = subprocess.Popen(["git", "pull"], cwd="stb")
+        p.wait()
+    else:
+        print("Cloning stb")
+        p = subprocess.Popen(["git", "clone", "https://github.com/nothings/stb"])
+        p.wait()
+
+
 def trigger(id):
     global msg
     global dependencies_file
@@ -143,10 +159,15 @@ def trigger(id):
         if id == 0:
             exit(0)
         elif id == 1:
+            getstb()
             print("Downloading")
             urllib.request.urlretrieve("http://seafile.media-dienste.de/f/85da9d3e98b347a490f6/?dl=1",
-                                       "Dependencies.zip")
-            print("Extract Archive")
+                                       "Dependencies.zip", callback)
+            print("Finished download         ")
+            print("Deleting old")
+            if os.path.exists("dependencies"):
+                shutil.rmtree("dependencies")
+            print("Extracting Archive")
             dependencies_file = zipfile.ZipFile("Dependencies.zip", mode="r")
             dependencies_file.extractall(path="dependencies\\")
             dependencies_file.close()
@@ -177,6 +198,11 @@ def trigger(id):
             msg = "Found " + str(files) + " files\nWith " + str(loc) + " lines of code"
             clear()
             return
+        elif id == 6:
+            getstb()
+            msg = "Finished!"
+            clear()
+            return
     except IOError or ValueError:
         clear()
         print(traceback.format_exc())
@@ -192,17 +218,18 @@ if len(sys.argv) > 1:
 
 while True:
     print("=============================")
-    print("       DEPENDENCIES 2.0      ")
+    print("       DEPENDENCIES 2.4      ")
     print("=============================")
     print("")
     if msg is not None:
         print(msg)
         print("")
-    print("1. Get dependencies")
+    print("1. Get all dependencies")
     print("2. Pack dependencies")
     print("3. Compile shader")
     print("4. Deploy engine")
     print("5. Get states")
+    print("6. Get stb only")
     print("0. Close")
     try:
         trigger(int(input()))
