@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include "glm/glm.hpp"
+#include "TGVertex.hpp"
 
 #define PI 3.14159265358979323846
 #define PIx2 6.28318530717958647692

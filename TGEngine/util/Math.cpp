@@ -1,4 +1,5 @@
 #include "Math.hpp"
+#include "../pipeline/buffer/Texturebuffer.hpp"
 
 namespace math {
 
@@ -7,14 +8,14 @@ namespace math {
 		return {
 			b.position + (a.position - b.position) * t,
 			math::mixColor(a.color, b.color, t),
-			b.uv + (a.ub - b.uv) * t,
+			b.uv + (a.uv - b.uv) * t,
 			COLOR_ONLY
 		};
 	}
 
 	glm::vec4 mixColor(glm::vec4 a, glm::vec4 b, float t)
 	{
-		float it = 1 - t; // Inverse time
+		const float it = 1 - t; // Inverse time
 		return glm::vec4(
 			sqrt(a.x * a.x * t + b.x * b.x * it),
 			sqrt(a.y * a.y * t + b.y * b.y * it),
@@ -26,7 +27,7 @@ namespace math {
 	float calculateNormalDistribution(float x, float mu, float sigma) {
 		return (1 / (sigma * SQRT_PIx2)) * pow(EULER, pow(x - mu, 2) / (2 * sigma * sigma));
 	}
-
+	
 	float f_max(float val1, float val2) {
 		if (val1 > val2) {
 			return val1;

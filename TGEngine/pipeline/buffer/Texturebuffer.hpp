@@ -12,7 +12,7 @@
 #include "../../util/VectorUtil.hpp"
 
 #define MAX_TEXTURES 4094
-#define COLOR_ONLY MAX_TEXTURES + 1
+#define COLOR_ONLY (MAX_TEXTURES + 1)
 
 struct Texture {
 	INPUT 
